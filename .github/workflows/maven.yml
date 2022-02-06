@@ -25,6 +25,4 @@ jobs:
     - name: Build with Maven
       run: mvn clean test
     - name: Running test
-      run: mvn failsafe:integration-test -DparallelExecutionLimit=5
-    - name: Generate Report
-      run: mvn serenity:aggregate 
+      run: mvn failsafe:integration-test -DparallelExecutionLimit=5 serenity:aggregate
