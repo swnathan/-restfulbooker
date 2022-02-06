@@ -2,5 +2,5 @@ package automation.enums;
 
 public enum Fields {
 
-	firstname,lastname,name
+	firstname,lastname,name,Dates
 }
