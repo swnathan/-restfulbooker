@@ -22,14 +22,26 @@ Feature: Testing API restful-booker
     Scenario: Verify Get Booking - Search By Dates (CheckIn,CheckOut)
     Then Search Booking by Dates         
  
-    Scenario: Verify Update Booking 
+    Scenario: Verify Update Booking - Valid Token
     Given Create Auth Token
-    Then Call UpdateBookings
+    Then Call UpdateBookings for valid
     
-    Scenario: Verify Partial Update Booking 
+    Scenario: Verify Update Booking - Invalid Token
     Given Create Auth Token
-    Then Call PartialUpdateBookings            
+    Then Call UpdateBookings for invalid
+    
+    Scenario: Verify Partial Update Booking  - Valid Token
+    Given Create Auth Token
+    Then Call PartialUpdateBookings for valid
+    
+    Scenario: Verify Partial Update Booking  - Invalid Token
+    Given Create Auth Token
+    Then Call PartialUpdateBookings for invalid         
          
-   Scenario: Verify Delete Booking 
+   Scenario: Verify Delete Booking  - Valid Token
+   Given Create Auth Token 
+   Then Call DeleteBooking for valid
+   
+   Scenario: Verify Deleted Booking  - Invalid Token
    Given Create Auth Token
-   Then Call DeleteBooking
+   Then Call DeleteBooking for invalid

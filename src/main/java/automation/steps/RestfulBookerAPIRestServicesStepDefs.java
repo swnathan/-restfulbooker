@@ -14,6 +14,7 @@ import org.junit.Assert;
 import org.openqa.selenium.logging.LoggingHandler;
 import com.github.javafaker.Faker;
 import automation.enums.Fields;
+import automation.enums.TokenTypes;
 import automation.environments.EnvironmentVariables;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
@@ -67,13 +68,24 @@ public class RestfulBookerAPIRestServicesStepDefs {
 		Assert.assertEquals("Status Code for Get BookingIds Call is different", 200, response.getStatusCode());
 	}
 
-	@Then("^Call DeleteBooking$")
-	public void deleteBooking() {
+	@Then("^Call DeleteBooking for (.*)$")
+	public void deleteBooking(TokenTypes TokenTypes) {
 		String tokenAccess = (String) Serenity.getCurrentSession().get("AccessToken");
-		Response response = SerenityRest.given().header("Content-Type", "application/json")
+		Response response;
+		switch(TokenTypes) {
+		case valid:
+	     response = SerenityRest.given().header("Content-Type", "application/json")
 				.header("Cookie", "token=" + "" + tokenAccess)
 				.delete(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
-		Assert.assertEquals("Status Code for Delete Booking is different", 201, response.getStatusCode());
+		Assert.assertEquals("Status Code for Delete Booking with Valid Token is different", 201, response.getStatusCode());
+		break;
+		case invalid:
+		     response = SerenityRest.given().header("Content-Type", "application/json")
+					.header("Cookie", "token=" + "" + tokenAccess + "test")
+					.delete(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+			Assert.assertEquals("Status Code for Delete Booking  with Invalid Token is different", 403, response.getStatusCode());
+		break;
+	}
 	}
 
 	@Then("^Call Get All GetBookingIds$")
@@ -207,65 +219,101 @@ public class RestfulBookerAPIRestServicesStepDefs {
 
 	}
 
-	@Then("^Call UpdateBookings$")
-	public void updateBookings() {
+	@Then("^Call UpdateBookings for (.*)$")
+	public void updateBookings(TokenTypes TokenTypes) {
 		JSONObject json = new JSONObject();
-		json.put("firstname", firstName);
-		json.put("lastname", lastName);
-		json.put("totalprice", bookingAmount);
 		JSONObject bookingDates = new JSONObject();
-		bookingDates.put("checkin", checkINDate);
-		bookingDates.put("checkout", checkoutDate);
-		json.put("bookingdates", bookingDates);
-		json.put("additionalneeds", "Lunch Included");
-		json.put("depositpaid", false);
 		String tokenAccess = (String) Serenity.getCurrentSession().get("AccessToken");
-		Response response = SerenityRest.given().header("Content-Type", "application/json")
-				.header("Cookie", "token=" + "" + tokenAccess).body(json.toString())
-				.put(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+		Response response;
 		Map<String, String> bookingResponse = new HashMap<String, String>();
-		JsonPath jsonPathEvaluator = response.jsonPath();
-		bookingResponse = response.jsonPath().getMap("booking");
-		Assert.assertEquals("Status Code for Update Booking Call is different", 200, response.getStatusCode());
+		JsonPath jsonPathEvaluator;
+		switch (TokenTypes) {
+		case valid:
+			json.put("firstname", firstName);
+			json.put("lastname", lastName);
+			json.put("totalprice", bookingAmount);
+			bookingDates.put("checkin", checkINDate);
+			bookingDates.put("checkout", checkoutDate);
+			json.put("bookingdates", bookingDates);
+			json.put("additionalneeds", "Lunch Included");
+			json.put("depositpaid", false);
+			response = SerenityRest.given().header("Content-Type", "application/json")
+					.header("Cookie", "token=" + "" + tokenAccess).body(json.toString())
+					.put(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+			jsonPathEvaluator = response.jsonPath();
+			bookingResponse = response.jsonPath().getMap("booking");
+			Assert.assertEquals("Status Code for Update Booking Call is different", 200, response.getStatusCode());
+			Assert.assertEquals("First Name Displayed in Update Booking Call Response is different",
+					json.get("firstname"), jsonPathEvaluator.get("firstname"));
+			Assert.assertEquals("Last Name Displayed in Update Booking Call Response is different",
+					json.get("lastname"), jsonPathEvaluator.get("lastname"));
+			Assert.assertEquals("Booking Checkin Dates in Update Booking Call Response is different",
+					bookingDates.get("checkin"), checkINDate);
+			Assert.assertEquals("Booking Checkout Dates in Update Booking Call Response is different",
+					bookingDates.get("checkout"), checkoutDate);
+			Assert.assertEquals("Booking Amount in Post Update Booking Call Response is different",
+					json.get("totalprice"), jsonPathEvaluator.get("totalprice"));
+			Assert.assertEquals("Additional Needs in Update Booking Call Response is different",
+					json.get("additionalneeds"), jsonPathEvaluator.get("additionalneeds"));
 
-		Assert.assertEquals("First Name Displayed in Update Booking Call Response is different", json.get("firstname"),
-				jsonPathEvaluator.get("firstname"));
-		Assert.assertEquals("Last Name Displayed in Update Booking Call Response is different", json.get("lastname"),
-				jsonPathEvaluator.get("lastname"));
-		Assert.assertEquals("Booking Checkin Dates in Update Booking Call Response is different",
-				bookingDates.get("checkin"), checkINDate);
-		Assert.assertEquals("Booking Checkout Dates in Update Booking Call Response is different",
-				bookingDates.get("checkout"), checkoutDate);
-		Assert.assertEquals("Booking Amount in Post Update Booking Call Response is different", json.get("totalprice"),
-				jsonPathEvaluator.get("totalprice"));
-		Assert.assertEquals("Additional Needs in Update Booking Call Response is different",
-				json.get("additionalneeds"), jsonPathEvaluator.get("additionalneeds"));
+			break;
+		case invalid:
+			json.put("firstname", firstName);
+			json.put("lastname", lastName);
+			json.put("totalprice", bookingAmount);
+			bookingDates.put("checkin", checkINDate);
+			bookingDates.put("checkout", checkoutDate);
+			json.put("bookingdates", bookingDates);
+			json.put("additionalneeds", "Lunch Included");
+			json.put("depositpaid", false);
+			response = SerenityRest.given().header("Content-Type", "application/json")
+					.header("Cookie", "token=" + "" + tokenAccess + "test").body(json.toString())
+					.put(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+			jsonPathEvaluator = response.jsonPath();
+			Assert.assertEquals("Status Code for Update Booking with Invalid Token Call is different", 403,
+					response.getStatusCode());
+			break;
+		}
 	}
 
-	@Then("^Call PartialUpdateBookings$")
-	public void partialUpdateBookings() {
+	@Then("^Call PartialUpdateBookings for (.*)$")
+	public void partialUpdateBookings(TokenTypes TokenTypes) {
 		JSONObject json = new JSONObject();
 		Map<String, String> bookingDate = new HashMap<String, String>();
-		json.put("additionalneeds", "Break Fast,Lunch,Dinner Included");
-		System.out.println(json.toString());
 		String tokenAccess = (String) Serenity.getCurrentSession().get("AccessToken");
-		Response response = SerenityRest.given().header("Content-Type", "application/json")
-				.header("Cookie", "token=" + "" + tokenAccess).body(json.toString())
-				.patch(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
-		JsonPath jsonPathEvaluator = response.jsonPath();
+		Response response;
+		JsonPath jsonPathEvaluator;
 		Map<String, String> bookingResponse = new HashMap<String, String>();
-		bookingDate = (Map<String, String>) response.jsonPath().get("bookingdates");
-		Assert.assertEquals("Status Code for Partial Update Booking is different", 200, response.getStatusCode());
-		Assert.assertEquals("First Name Displayed in Partial Update Booking Response is different", firstName,
-				jsonPathEvaluator.get("firstname"));
-		Assert.assertEquals("Last Name Displayed in Partial Update Booking Response is different", lastName,
-				jsonPathEvaluator.get("lastname"));
-		Assert.assertEquals("Booking Checkin Dates in Partial Update Booking Response is different", checkINDate,
-				bookingDate.get("checkin"));
-		Assert.assertEquals("Booking Checkout Dates in Partial Update Booking Response is different", checkoutDate,
-				bookingDate.get("checkout"));
-		Assert.assertEquals("Additional Needs in Partial Update Booking Response is different",
-				json.get("additionalneeds"), jsonPathEvaluator.get("additionalneeds"));
-	}
 
+		switch (TokenTypes) {
+		case valid:
+			json.put("additionalneeds", "Break Fast,Lunch,Dinner Included");
+			response = SerenityRest.given().header("Content-Type", "application/json")
+					.header("Cookie", "token=" + "" + tokenAccess).body(json.toString())
+					.patch(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+			jsonPathEvaluator = response.jsonPath();
+			bookingDate = (Map<String, String>) response.jsonPath().get("bookingdates");
+			Assert.assertEquals("Status Code for Partial Update Booking is different", 200, response.getStatusCode());
+			Assert.assertEquals("First Name Displayed in Partial Update Booking Response is different", firstName,
+					jsonPathEvaluator.get("firstname"));
+			Assert.assertEquals("Last Name Displayed in Partial Update Booking Response is different", lastName,
+					jsonPathEvaluator.get("lastname"));
+			Assert.assertEquals("Booking Checkin Dates in Partial Update Booking Response is different", checkINDate,
+					bookingDate.get("checkin"));
+			Assert.assertEquals("Booking Checkout Dates in Partial Update Booking Response is different", checkoutDate,
+					bookingDate.get("checkout"));
+			Assert.assertEquals("Additional Needs in Partial Update Booking Response is different",
+					json.get("additionalneeds"), jsonPathEvaluator.get("additionalneeds"));
+
+			break;
+		case invalid:
+			json.put("additionalneeds", "Break Fast,Lunch,Dinner Included");
+			response = SerenityRest.given().header("Content-Type", "application/json")
+					.header("Cookie", "token=" + "" + tokenAccess + "test").body(json.toString())
+					.patch(EnvironmentVariables.getRestFullBookerEndPoint() + "/booking/" + "" + bookingID);
+			jsonPathEvaluator = response.jsonPath();
+			Assert.assertEquals("Status Code for Partial Booking with Invalid Token Call is different", 403,
+					response.getStatusCode());
+		}
+	}
 }
